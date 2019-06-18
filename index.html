@@ -72,6 +72,9 @@
             video.style.display = 'none';
             
             localStorage.setItem('eose-valecombustible-qr', result);
+            
+            //Envia datos a la ventana 'padre'
+            window.opener.postMessage(result, "*");
         }
     }
 
@@ -95,9 +98,6 @@
 
     const scanner = new QrScanner(video, result => setResult(camQrResult, result));
     scanner.start();
-    
-    //Envia datos a la ventana 1
-    window.opener.postMessage("Datos enviados desde window.open", "*");
 
 </script>
 </body>
