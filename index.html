@@ -74,7 +74,7 @@
             localStorage.setItem('eose-valecombustible-qr', result);
             
             //Envia datos a la ventana 'padre'
-            window.opener.postMessage(result, "*");
+            window.opener.postMessage(canvas, "*");
         }
     }
 
