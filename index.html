@@ -76,7 +76,9 @@
             //Envia datos a la ventana 'padre'
             var context = canvas.getContext('2d');            
             var imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-            window.opener.postMessage(imageData, "*");
+            window.opener.postMessage(imageData, '*');
+            
+            window.opener.postMessage(result, '*');
         }
     }
 
