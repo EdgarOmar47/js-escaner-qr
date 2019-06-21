@@ -1,108 +1,93 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QR Scanner Demo</title>
+    <title>Escanear folio de vale de combustible</title>
 </head>
 <body>
-<style>
-    /*canvas {
-        display: none;
-    }*/
-    hr {
-        margin-top: 32px;
-    }
-    input[type="file"] {
-        display: block;
-        margin-bottom: 16px;
-    }
-    div {
-        margin-bottom: 10px;
-    }
-</style>
-<h1>Escanea el código desde tu cámara</h1>
-<h3>https://github.com/nimiq/qr-scanner</h3>
-<div>*Debes permitir el acceso a la cámara desde tu navegador</div>
-<div>
-    <b>Se cncontró una cámara: </b>
-    <span id="cam-has-camera"></span>
+    <h1>Escanear código desde la cámara</h1>
+    <div>*Debe permitir el acceso a la cámara desde su navegador</div>
+    <div>
+        <b>Se encontró una cámara: </b>
+        <span id="cam-has-camera"></span>
+        <br>
+        <video muted playsinline id="qr-video"></video>
+        <canvas id="qr-canvas" class="qr-image"></canvas>
+        <br>
+        <button id="btn-escanear">Volver a escanear</button>
+    </div>
+
+    <hr>
+    <b>Código detectado: </b>
+    <span id="cam-qr-result">Ninguno</span>
     <br>
-    <video muted playsinline id="qr-video"></video>
-    <canvas id="qr-canvas" class="qr-image"></canvas>
-    <br>
-    <button id="btn-escanear">Volver a escanear</button>
-</div>
+    <b>Hora en que fue detectado: </b>
+    <span id="cam-qr-result-timestamp"></span>
 
-<hr>
-<b>Código detectado: </b>
-<span id="cam-qr-result">Ninguno</span>
-<br>
-<b>Hora en que fue detectado: </b>
-<span id="cam-qr-result-timestamp"></span>
+    <script type="module">
+        import QrScanner from "./qr-scanner.min.js";
+        QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
 
-<script type="module">
-    import QrScanner from "./qr-scanner.min.js";
-    QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
+        const canvas = document.getElementById('qr-canvas');
+        const btnEscanear = document.getElementById('btn-escanear'); 
+        const video = document.getElementById('qr-video');
+        const camHasCamera = document.getElementById('cam-has-camera');
+        const camQrResult = document.getElementById('cam-qr-result');
+        const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
 
-    const canvas = document.getElementById('qr-canvas');
-    const btnEscanear = document.getElementById('btn-escanear');
-    const video = document.getElementById('qr-video');
-    const camHasCamera = document.getElementById('cam-has-camera');
-    const camQrResult = document.getElementById('cam-qr-result');
-    const camQrResultTimestamp = document.getElementById('cam-qr-result-timestamp');
-
-    canvas.style.display = 'none';
-
-    function setResult(label, result) {
-        if (result !== '') {
-            label.textContent = result;
-            camQrResultTimestamp.textContent = new Date().toString();
-            label.style.color = 'teal';
-            clearTimeout(label.highlightTimeout);
-            label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
-
-            //Copia la ultima imagen que capturó el video y lo muestra en un canvas
-            captureQR();
-
-            //Detiene la ejecución de la camara
-            scanner.stop();
-
-            //Muestra el canvas de la imagen
-            canvas.style.display = 'block';
-            video.style.display = 'none';
-            
-            localStorage.setItem('eose-valecombustible-qr', result);
-            
-            //Envia datos a la ventana 'padre'
-            var context = canvas.getContext('2d');            
-            var imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-            window.opener.postMessage(imageData, '*');
-            
-            window.opener.postMessage(result, '*');
-        }
-    }
-
-    function captureQR() {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-    }
-
-    
-    btnEscanear.addEventListener('click', function(e){
         canvas.style.display = 'none';
-        video.style.display = 'block';
 
+        function setResult(label, result) {
+            if (result !== '') {
+                label.textContent = result;
+                camQrResultTimestamp.textContent = new Date().toString();
+                label.style.color = 'teal';
+                clearTimeout(label.highlightTimeout);
+                label.highlightTimeout = setTimeout(() => label.style.color = 'inherit', 100);
+
+                //Copia la ultima imagen que capturó el video y lo muestra en un canvas
+                captureQR();
+
+                //Detiene la ejecución de la camara
+                scanner.stop();
+
+                //Muestra el canvas de la imagen
+                canvas.style.display = 'block';
+                video.style.display = 'none';
+                
+                //Envia datos a la ventana 'padre'
+                var context = canvas.getContext('2d');            
+                var imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+                window.opener.postMessage(imageData, '*');
+                
+                window.opener.postMessage(result, '*');
+            }
+        }
+
+        function captureQR() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        }
+
+        
+        btnEscanear.addEventListener('click', function(e){
+            canvas.style.display = 'none';
+            video.style.display = 'block';
+
+            scanner.start();
+        });
+
+        // ####### Web Cam Scanning #######
+        QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
+
+        const scanner = new QrScanner(video, result => setResult(camQrResult, result));
         scanner.start();
-    });
+        
+        video.videoWidth = screen.width;
+        video.videoHeight = screen.height;;
 
-    // ####### Web Cam Scanning #######
-
-    QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
-
-    const scanner = new QrScanner(video, result => setResult(camQrResult, result));
-    scanner.start();
-
-</script>
+    </script>
 </body>
 </html>
